@@ -1,12 +1,13 @@
 from typing import Dict, List, Optional, Set, Tuple
 
-word_list = []
+word_list : List[str] = []
 
+# import words from wordle file
 with open('words.txt') as f:
   for word in f.readlines():
     word_list.append(word.strip().upper())
 
-
+# sample waffle puzzles
 tiles = [
   ("C", 0, 0, 0, "green"),
   ("L", 1, 0, 1, "black"),
@@ -30,7 +31,6 @@ tiles = [
   ("R", 3, 4, 23, "black"),
   ("Y", 4, 4, 24, "green"),
 ]
-
 
 tiles = [
   ("M", 0, 0, 0, "green"),
@@ -57,6 +57,7 @@ tiles = [
 ]
 
 
+# Print text in color, helps with debugging
 def colored(color : str, text : str) -> str:
   if color == 'green':
     r, g, b = 0, 255, 0
@@ -132,7 +133,7 @@ class Board():
         self.letter_to_tile[t.letter] = []
       self.letter_to_tile[t.letter].append(t)
     
-    print('all possible letters: ', ' '.join(sorted(list(all_possible_letters))))
+    print('All possible letters: ', ' '.join(sorted(list(all_possible_letters))))
     print()
 
     self.spaces : List[Optional[Space]] = [None] * (BOARD_SIZE * BOARD_SIZE)
@@ -174,28 +175,40 @@ class Board():
 
   
 board = Board(tiles)
-
 board.print_board()
 
 def solve(tile : Tile) -> None:
   space = tile.space
+
   if tile.color == 'green':
+    # set all other letters to impossible
     space.add_impossibles(space.possible_letters.difference(set([tile.letter])))
+
+    # add that letter to the for-sure letters of its words
     for word in tile.words:
       word.known_letters.append(tile.letter)
+
+    # if all instances of this letter are solved, remove this letter from the possible letters of all other spaces
     if all([t.color == 'green' for t in board.letter_to_tile[tile.letter]]):
       for t in board.board:
         if t and t.letter != tile.letter:
           t.space.add_impossible(tile.letter)
-    return
+
   elif tile.color == 'yellow':
+    # this space cannot be this letter
     space.add_impossible(tile.letter)
+
+    # if this space is not an intersection letter (spans a single word), we know this letter must be in this word
     if tile.x % 2 or tile.y % 2:
       assert(len(tile.words) == 1)
       tile.words[0].known_letters.append(tile.letter)
+
   else:
+    # this space cannot be this letter
     space.add_impossible(tile.letter)
 
+  # we only deal with letters that are the only instance of its letter in its word
+  # when there are multiple tiles of the same letter, things get more complicated with the coloring ordering
   for word in tile.words:
     for letter in word.letters:
       if letter == tile:
@@ -222,26 +235,28 @@ def solve(tile : Tile) -> None:
         if t and t not in current_letters and t.color != 'green':
           t.space.add_impossible(tile.letter)
 
-def apply_tile_solve(func):
-  for i in range(BOARD_SIZE):
-    for j in range(BOARD_SIZE):
-      if i % 2 and j % 2:
-        continue
-      idx = i * BOARD_SIZE + j
-      func(board.board[idx])
+# wrapper function that iterates over each tile and calls a function on that tile
+def apply_func_to_tile(func):
+  for tile in board.board:
+    if tile:
+      func(tile)
 
 def print_possible_answers():
   print()
-  apply_tile_solve(lambda t: print(t.space))
+  apply_func_to_tile(lambda t: print(t.space))
 
-apply_tile_solve(solve)
+apply_func_to_tile(solve)
 print_possible_answers()
+print()
 
+# cross reference wordle words with constraints on board
 for word in board.words:
   print(word)
 
   for real_word in word_list:
     possible = True
+
+    # make sure for-sure letters are in the word
     for letter in word.known_letters:
       if letter not in real_word:
         possible = False
@@ -250,6 +265,7 @@ for word in board.words:
     if not possible:
       continue
 
+    # make sure all letters in the word satisfy the positional constraints
     union_possible_letters = set()
     for i, tile in enumerate(word.letters):
       if real_word[i] not in tile.space.possible_letters:
@@ -257,8 +273,10 @@ for word in board.words:
         break
 
     if possible:
-      print('Possible: ', real_word)
+      print('Possible word: ', real_word)
       word.possible_answers.append(real_word)
+
+print()
 
 def is_valid_permutation(words : List[str]) -> bool:
   # make sure the word intersections match up
@@ -287,8 +305,9 @@ def is_valid_permutation(words : List[str]) -> bool:
   return True
 
 answer : List[List[str]] = []
-
 cur_idxs = [0] * NUM_WORDS
+
+print('Try all possible waffles with possible words')
 while True:
   cur_words : List[str] = []
   for i, word in enumerate(board.words):
@@ -298,7 +317,7 @@ while True:
   print(cur_words)
   if is_valid_permutation(cur_words):
     print('Valid permutation: ', cur_words)
-    answer = cur_words
+    answer.append(cur_words)
 
   # iterate to next permutation of possible answers
   cur_idxs[-1] += 1
@@ -311,3 +330,9 @@ while True:
 
 if not answer:
   print('No valid answer found')
+  exit()
+
+print()
+print('Valid waffles', answer)
+
+# Deal with swaps now...
