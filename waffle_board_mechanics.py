@@ -23,7 +23,7 @@ driver = webdriver.Chrome()
 driver.get('https://wafflegame.net/')
 
 # close the popup
-# time.sleep(2)
+time.sleep(2)
 elem = driver.find_element(by=By.CLASS_NAME, value='button--close')
 try:
   elem.click()
@@ -111,14 +111,18 @@ board = Board(tiles)
 for word in board.words:
   print(word)
 
-'''
 for space in spaces:
   print(space.get_attribute('data-pos'))
 
+
+tile = driver.find_element(By.CSS_SELECTOR, "div.tile.draggable[data-pos='{\"x\":1,\"y\":0}']")
+space = driver.find_element(By.CSS_SELECTOR, "div.space[data-pos='{\"x\":4,\"y\":3}']")
+
+print(tile, space)
+
 time.sleep(1)
 action_chains = ActionChains(driver)
-action_chains.drag_and_drop(tiles[1], spaces[1]).perform()
-'''
+action_chains.drag_and_drop(tile, space).perform()
 
 time.sleep(10)
 driver.quit()
