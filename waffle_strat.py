@@ -1,3 +1,7 @@
+# File to develop waffle strategy
+# First try to figure out the six words used in the waffle
+# Then determine the optimal 10 swaps to solve the waffle
+
 from copy import deepcopy
 from typing import Dict, List, Optional, Set, Tuple
 
