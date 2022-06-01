@@ -1,3 +1,5 @@
+# Test file for board mechanics + selenium
+
 import time
 import json
 from selenium import webdriver
