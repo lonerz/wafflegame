@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Dict, List, Optional, Set, Tuple
 
 word_list : List[str] = []
@@ -54,6 +55,30 @@ tiles = [
   ("A", 2, 4, 22, "yellow"),
   ("A", 3, 4, 23, "black"),
   ("D", 4, 4, 24, "green"),
+]
+
+tiles = [
+  ("S", 0, 0, 0, "green"),
+  ("P", 1, 0, 1, "black"),
+  ("U", 2, 0, 2, "yellow"),
+  ("D", 3, 0, 3, "black"),
+  ("Y", 4, 0, 4, "green"),
+  ("I", 0, 1, 5, "yellow"),
+  ("U", 2, 1, 7, "black"),
+  ("M", 4, 1, 9, "yellow"),
+  ("T", 0, 2, 10, "black"),
+  ("O", 1, 2, 11, "yellow"),
+  ("I", 2, 2, 12, "green"),
+  ("L", 3, 2, 13, "black"),
+  ("M", 4, 2, 14, "green"),
+  ("U", 0, 3, 15, "black"),
+  ("W", 2, 3, 17, "black"),
+  ("O", 4, 3, 19, "black"),
+  ("L", 0, 4, 20, "green"),
+  ("P", 1, 4, 21, "yellow"),
+  ("M", 2, 4, 22, "green"),
+  ("O", 3, 4, 23, "black"),
+  ("Y", 4, 4, 24, "green"),
 ]
 
 
@@ -278,6 +303,13 @@ for word in board.words:
 
 print()
 
+try:
+  for word in board.words:
+    assert(len(word.possible_answers))
+except AssertionError:
+  print('No possible answers, check word list')
+  exit()
+
 def is_valid_permutation(words : List[str]) -> bool:
   # make sure the word intersections match up
   for i in range(NUM_WORDS // 2):
@@ -314,7 +346,7 @@ while True:
     cur_words.append(word.possible_answers[cur_idxs[i]])
 
   # check if the current permutation of possible answers is valid
-  print(cur_words)
+  # print(cur_words)
   if is_valid_permutation(cur_words):
     print('Valid permutation: ', cur_words)
     answer.append(cur_words)
@@ -336,3 +368,82 @@ print()
 print('Valid waffles', answer)
 
 # Deal with swaps now...
+current_waffle = [t.letter if t else None for t in board.board]
+correct_waffle = [None] * (BOARD_SIZE * BOARD_SIZE)
+print('Using valid solution: ', answer[0])
+
+for i in range(NUM_WORDS // 2):
+  for j in range(BOARD_SIZE):
+    correct_waffle[2 * i * BOARD_SIZE + j] = answer[0][i][j]
+
+for i in range(NUM_WORDS // 2, NUM_WORDS):
+  for j in range(BOARD_SIZE):
+    if j % 2 == 0:
+      assert(correct_waffle[j * BOARD_SIZE + 2 * (i - NUM_WORDS // 2)] == answer[0][i][j])
+    correct_waffle[j * BOARD_SIZE + 2 * (i - NUM_WORDS // 2)] = answer[0][i][j]
+
+print('Starting waffle', current_waffle)
+print()
+
+letter_to_correct_index : Dict[str, Set[int]] = {}
+for i, letter in enumerate(correct_waffle):
+  if not letter:
+    continue
+  # if the letter is already correct, we don't care about it
+  if letter == current_waffle[i]:
+    continue
+  if letter not in letter_to_correct_index:
+    letter_to_correct_index[letter] = set()
+  letter_to_correct_index[letter].add(i)
+
+queue = [(None, current_waffle, [], letter_to_correct_index)]
+
+while len(queue) > 0:
+  last_swapped_index, current_board, current_swaps, letter_to_index = queue.pop(0)
+
+  # we don't care about solutions that are already unoptimized
+  if len(current_swaps) > 10:
+    continue
+
+  # if we swapped something last time, we should keep swapping it
+  if last_swapped_index is not None:
+    t = current_board[last_swapped_index]
+    for index in letter_to_index[t]:
+      new_board = current_board[:]
+      new_board[last_swapped_index], new_board[index] = new_board[index], new_board[last_swapped_index]
+      new_swaps = current_swaps[:] + [(last_swapped_index, index)]
+      new_letter_to_index = deepcopy(letter_to_index)
+      new_letter_to_index[t].remove(index)
+      swapped_index = None
+      if correct_waffle[last_swapped_index] != new_board[last_swapped_index]:
+        swapped_index = last_swapped_index
+      queue.append((swapped_index, new_board, new_swaps, new_letter_to_index))
+    continue
+
+  swapped = False
+  for i in range(BOARD_SIZE * BOARD_SIZE):
+    t = current_board[i]
+    # skip over Nones
+    if not t:
+      continue
+    # if the tile is already correct, skip over it
+    if t == correct_waffle[i]:
+      continue
+
+    # find a correct tile to swap into
+    for index in letter_to_index[t]:
+      assert(index != i)
+      new_board = current_board[:]
+      new_board[i], new_board[index] = new_board[index], new_board[i]
+      new_swaps = current_swaps[:] + [(i, index)]
+      new_letter_to_index = deepcopy(letter_to_index)
+      new_letter_to_index[t].remove(index)
+      swapped_index = None
+      if correct_waffle[i] != new_board[i]:
+        swapped_index = i
+      swapped = True
+      queue.append((swapped_index, new_board, new_swaps, new_letter_to_index))
+
+  if not swapped:
+    print('We found a solution!', current_board, current_swaps)
+    break
