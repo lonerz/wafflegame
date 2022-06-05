@@ -393,6 +393,8 @@ while len(queue) > 0:
   if last_swapped_index is not None:
     t = current_board[last_swapped_index]
     for index in letter_to_index[t]:
+      if last_swapped_index > index:
+        continue
       new_board = current_board[:]
       new_board[last_swapped_index], new_board[index] = new_board[index], new_board[last_swapped_index]
       new_swaps = current_swaps[:] + [(last_swapped_index, index)]
@@ -416,7 +418,8 @@ while len(queue) > 0:
 
     # find a correct tile to swap into
     for index in letter_to_index[t]:
-      assert(index != i)
+      if i > index:
+        continue
       new_board = current_board[:]
       new_board[i], new_board[index] = new_board[index], new_board[i]
       new_swaps = current_swaps[:] + [(i, index)]
