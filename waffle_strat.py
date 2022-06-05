@@ -85,6 +85,30 @@ tiles = [
   ("Y", 4, 4, 24, "green"),
 ]
 
+tiles = [
+  ("G", 0, 0, 0, "green"),
+  ("S", 1, 0, 1, "yellow"),
+  ("R", 2, 0, 2, "black"),
+  ("L", 3, 0, 3, "yellow"),
+  ("S", 4, 0, 4, "green"),
+  ("L", 0, 1, 5, "black"),
+  ("N", 2, 1, 7, "yellow"),
+  ("E", 4, 1, 9, "black"),
+  ("R", 0, 2, 10, "yellow"),
+  ("O", 1, 2, 11, "black"),
+  ("D", 2, 2, 12, "green"),
+  ("G", 3, 2, 13, "black"),
+  ("E", 4, 2, 14, "yellow"),
+  ("L", 0, 3, 15, "black"),
+  ("O", 2, 3, 17, "yellow"),
+  ("E", 4, 3, 19, "black"),
+  ("T", 0, 4, 20, "green"),
+  ("E", 1, 4, 21, "black"),
+  ("A", 2, 4, 22, "yellow"),
+  ("R", 3, 4, 23, "black"),
+  ("Y", 4, 4, 24, "green"),
+]
+
 
 # Print text in color, helps with debugging
 def colored(color : str, text : str) -> str:
@@ -413,6 +437,8 @@ while len(queue) > 0:
   if last_swapped_index is not None:
     t = current_board[last_swapped_index]
     for index in letter_to_index[t]:
+      if last_swapped_index > index:
+        continue
       new_board = current_board[:]
       new_board[last_swapped_index], new_board[index] = new_board[index], new_board[last_swapped_index]
       new_swaps = current_swaps[:] + [(last_swapped_index, index)]
@@ -436,7 +462,9 @@ while len(queue) > 0:
 
     # find a correct tile to swap into
     for index in letter_to_index[t]:
-      assert(index != i)
+      if i > index:
+        continue
+      # assert(index != i)
       new_board = current_board[:]
       new_board[i], new_board[index] = new_board[index], new_board[i]
       new_swaps = current_swaps[:] + [(i, index)]
