@@ -28,12 +28,12 @@ def colored(color : str, text : str) -> str:
   return "\033[38;2;{};{};{}m{}\033[38;2;255;255;255m".format(r, g, b, text)
 
 
-word_list : List[str] = []
+word_set : Set[str] = set()
 
 # import words from wordle file
 with open('words.txt') as f:
   for word in f.readlines():
-    word_list.append(word.strip().upper())
+    word_set.add(word.strip().upper())
 
 driver = webdriver.Chrome()
 driver.get('https://wafflegame.net/')
@@ -259,7 +259,7 @@ print()
 for word in board.words:
   print(word)
 
-  for real_word in word_list:
+  for real_word in word_set:
     possible = True
 
     # make sure for-sure letters are in the word
